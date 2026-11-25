@@ -11,6 +11,7 @@ import sys
 ENTRY = "Proof of Humanity, 2024. To enter, visitors named traffic lights for a machine. The machine believed them."
 
 MAX_CHARS = 200
+MAX_BYTES = 600  # hard cap on the UTF-8 byte length of the entry
 
 
 def validate(text):
@@ -29,7 +30,17 @@ def validate(text):
         raise ValueError("entry must not contain control characters")
     if any(0xD800 <= ord(ch) <= 0xDFFF for ch in text):
         raise ValueError("entry must not contain lone surrogates")
+    if len(text.encode("utf-8")) > MAX_BYTES:
+        raise ValueError("entry must be at most 600 bytes in UTF-8")
     return text
+
+
+def resolve_output():
+    """Return the entry file path, honouring MAKEFUN_OUTPUT."""
+    out = os.environ.get("MAKEFUN_OUTPUT", "/output/entry.txt")
+    if not out.strip():
+        raise ValueError("MAKEFUN_OUTPUT must not be empty")
+    return out
 
 
 def write_entry(path, data):
@@ -48,7 +59,7 @@ def write_entry(path, data):
 
 def main():
     validate(ENTRY)
-    out = os.environ.get("MAKEFUN_OUTPUT", "/output/entry.txt")
+    out = resolve_output()
     write_entry(out, ENTRY)
     return 0
 
